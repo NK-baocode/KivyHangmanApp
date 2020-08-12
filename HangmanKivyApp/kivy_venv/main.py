@@ -17,7 +17,7 @@ from kivy.uix.slider import Slider
 from kivy.uix.label import Label
 from kivy.uix.widget import Widget
 from kivy.uix.image import Image, AsyncImage
-from kivy.uix.screenmanager import ScreenManager, Screen
+from kivy.uix.screenmanager import ScreenManager, Screen, NoTransition, FadeTransition, SlideTransition
 from kivy.lang import Builder
 from kivy.properties import ObjectProperty
 from kivy.properties import StringProperty
@@ -39,6 +39,10 @@ Config.set('graphics', 'resizable', True)
 
 
 Builder.load_string('''
+#: import FadeTransition kivy.uix.screenmanager.FadeTransition
+#: import NoTransition kivy.uix.screenmanager.NoTransition
+#: import SlideTransition kivy.uix.screenmanager.SlideTransition
+
 <MenuScreen>:
     on_enter:
         self.btnsound.seek(0)
@@ -63,7 +67,7 @@ Builder.load_string('''
             background_down: r'imgs\play_pressed.png'
             on_press:
                 self.parent.parent.btnsound.play()
-                root.manager.transition.direction = 'left'
+                root.manager.transition = NoTransition()
                 root.manager.current = 'load'
         Button:
             background_normal: r'imgs\settings_normal.png'
@@ -71,6 +75,7 @@ Builder.load_string('''
             size_hint: (0.15, 0.15)
             pos_hint:{'x':0.425, 'y':0.15}
             on_press:
+                root.manager.transition = SlideTransition()
                 root.manager.transition.direction = "left"
                 root.manager.current = 'settings'
 
@@ -95,9 +100,19 @@ Builder.load_string('''
             size_hint: (0.5, 0.15)
             pos_hint: {'x': 0.25, 'y' : 0.15}
             on_press:
+                root.manager.transition = SlideTransition()
                 root.manager.transition.direction = 'left'
                 root.manager.current = 'credits'
-        
+        Button:
+            size_hint: (0.2, 0.07)
+            pos_hint : {'x' : 0, 'y': 0.93}
+            background_normal: r'imgs\small_back_normal.png'
+            background_down: r'imgs\small_back_pressed.png'
+            on_press:
+                root.manager.transition = SlideTransition()
+                root.manager.transition.direction = 'right' 
+                root.manager.current = 'menu'
+
 <LoadScreen>:
     on_enter:
         self.loadgame()
@@ -148,11 +163,34 @@ Builder.load_string('''
             background_normal: r'imgs\small_back_normal.png'
             background_down: r'imgs\small_back_pressed.png'
             on_press:
+                root.manager.transition = SlideTransition()
                 root.manager.transition.direction = 'right' 
-                root.manager.current = 'menu'
-            
-            
-            
+                root.manager.current = 'settings'
+
+<LevelButton>:
+    on_press:
+        root.manager.transition = NoTransition()
+        root.manager.current = 'load'
+    size_hint: (0.2, 0.2)
+
+
+<Level1Screen>:
+    Float:
+        size_hint: (1,1)
+        canvas:
+            Rectangle:
+                source: r'imgs\\paperbkgd.jpg'
+                pos: self.pos
+                size: self.size
+        LevelButton:
+            background_normal: r'imgs\\lilplay_normal.png'
+            background_down: r'imgs\\lilplay_normal.png'
+            pos_hint: {'x' : 0.3, 'y' : 0.5}
+        LevelButton:
+            background_normal: self.btn12
+            background_down: self.btnp12
+            pos_hint: {'x' : 0.6, 'y' : 0.5}
+
 <TopRowKey>:
     font_size: 20
     on_press: 
@@ -297,6 +335,7 @@ Builder.load_string('''
                 background_normal: r'imgs\small_back_normal.png'
                 background_down: r'imgs\small_back_pressed.png'
                 on_press:
+                    root.manager.transition = SlideTransition()
                     root.manager.transition.direction = 'right' 
                     root.manager.current = 'menu'
 ''')
@@ -311,9 +350,19 @@ class SettingsScreen(Screen):
 class CreditsScreen(Screen):
     pass
 
-class LoadScreen(Screen):
+class Level1Screen(Screen):
+    btnsound=SoundLoader.load('sounds\\pop.wav')
 
-    loadimg = ObjectProperty
+# establish a dictionary of booleans to
+Level_Wins_Dictionary = {'lvl11' : False, 'lvl12' : False, 'lvl13' : False}
+
+class LevelLoadScreen(Screen):
+    '''def loadlevelscreen(self):
+        for level in Level_Wins_Dictionary:
+            if level == True:'''
+
+
+class LoadScreen(Screen):
 
     def loadgame(self):
         global usedlet
@@ -335,8 +384,9 @@ class LoadScreen(Screen):
 
         game = sm.get_screen('game')
 
+
         # open text file of secret words
-        swtxt=open(r'C:\Users\maddy\PycharmProjects\HangmanKivyApp\kivy_venv\words.txt',
+        swtxt=open(r'words.txt',
                    "r")  # words.txt has 742 lines
         words=list(swtxt)
 
@@ -388,7 +438,7 @@ class LoadScreen(Screen):
         game.children[0].children[0].winsd.seek(0)
         game.children[0].children[0].losesd.seek(0)
 
-        sm.transition.direction="left"
+        sm.transition = FadeTransition()
         sm.current='game'
 
         return
@@ -471,6 +521,9 @@ class GameScreen(Screen):
 
         return
 
+class LevelButton(Button):
+    btn12 = StringProperty('')
+    btnp12 = StringProperty('')
 
 class TopRowKey(Button):
     pass
@@ -609,6 +662,7 @@ sm.add_widget(GameScreen(name='game'))
 sm.add_widget(SettingsScreen(name='settings'))
 sm.add_widget(LoadScreen(name='load'))
 sm.add_widget(CreditsScreen(name='credits'))
+sm.add_widget(Level1Screen(name='level1'))
 
 
 sm.current = 'menu'
